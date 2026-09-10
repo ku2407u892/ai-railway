@@ -21,6 +21,12 @@ app.include_router(trains.router)
 app.include_router(alerts.router)
 app.include_router(optimization.router)
 
+
+@app.on_event("startup")
+def on_startup():
+    seed()
+
+
 def seed():
     db = SessionLocal()
     try:
