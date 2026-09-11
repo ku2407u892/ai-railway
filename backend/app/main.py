@@ -5,6 +5,7 @@ from .models import User, Block, Train, Alert, OptimizationLog
 from .routes import auth, blocks, trains, alerts, optimization
 from .routes.auth import get_password_hash
 from datetime import datetime, timedelta
+from fastapi.testclient import TestClient
 
 Base.metadata.create_all(bind=engine)
 
@@ -14,29 +15,43 @@ app.add_middleware(CORSMiddleware,
     allow_origins=["http://localhost:3000", "https://ai-railway.vercel.app"],
     allow_credentials=True, allow_methods=["*"], allow_headers=["*"])
 
-
 app.include_router(auth.router)
 app.include_router(blocks.router)
 app.include_router(trains.router)
 app.include_router(alerts.router)
 app.include_router(optimization.router)
 
+def test_db_connection():
+    db = SessionLocal()
+    try:
+        # Test the connection by executing a simple query
+        result = db.execute("SELECT 1")
+        print("Database connection successful!")
+    except Exception as e:
+        print(f"Database connection failed: {e}")
+    finally:
+        db.close()
+
+# Call the test function
+test_db_connection()
 
 @app.on_event("startup")
 def on_startup():
     seed()
 
-
 def seed():
     db = SessionLocal()
     try:
         if db.query(User).count() > 0:
+            print("Database already seeded.")
             return
-        db.add_all([
+        users = [
             User(username="admin", email="admin@railops.com", hashed_password=get_password_hash("railway123"), role="admin"),
             User(username="operator", email="operator@railops.com", hashed_password=get_password_hash("railway123"), role="operator")
-        ])
+        ]
+        db.add_all(users)
         db.commit()
+        print(f"Created users: {[user.username for user in users]}")
 
         block_data = [
             {"name":"AHM-01","location":"Ahmedabad Station","zone":"Western","status":"occupied","track_health":92.5},
@@ -73,6 +88,19 @@ def seed():
         db.commit()
         print("Database seeded with 5-city data!")
     except Exception as e:
-        print(f"Seed error: {e}"); db.rollback()
+        print(f"Seed error: {e}")
+        db.rollback()
     finally:
         db.close()
+
+client = TestClient(app)
+
+def test_login():
+    response = client.post(
+        "/auth/login",
+        json={"username": "admin", "password": "railway123"}
+    )
+    print(f"Login response: {response.json()}")
+
+# Call the test function
+test_login()
