@@ -1,18 +1,12 @@
 from sqlalchemy import create_engine
-from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker
-import os
-from dotenv import load_dotenv
+from urllib.parse import quote_plus
 
-load_dotenv()
-DATABASE_URL = os.getenv("DATABASE_URL", "sqlite:///./railops.db")
-engine = create_engine(DATABASE_URL, connect_args={"check_same_thread": False})
+# Replace these with your actual Render Postgres DB URL
+DATABASE_URL = "postgresql://ai_railops_db_user:tHCuLObd3lAGhhJW1eLrs5hOZfSPEN4s@dpg-dahnuu3m8hqs73cl4b6g-a/ai_railops_db"
+
+# If using Render, it will give you this URL automatically
+# Example: postgresql://user:pass@db.render.com:5432/mydb
+
+engine = create_engine(DATABASE_URL)
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
-Base = declarative_base()
-
-def get_db():
-    db = SessionLocal()
-    try:
-        yield db
-    finally:
-        db.close()
